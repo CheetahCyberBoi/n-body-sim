@@ -16,10 +16,14 @@ struct State {
 
 impl State {
     fn new(num_bodies: u32) -> Self {
+        // seed the random number generator.
+        // this is needed because macroquad doesn't seed it from the systemtime itself
+        // lazy macroquad :(
         let unix_epoch_diff = (SystemTime::now().duration_since(UNIX_EPOCH).unwrap()).as_secs();
         srand(unix_epoch_diff);
 
         pretty_env_logger::init();
+
         let mut bodies = Vec::new();
         for _ in 0..num_bodies {
             bodies.push(Body {
@@ -36,6 +40,8 @@ impl State {
             frame_rates: Vec::new(),
         }
     }
+    // Called every frame
+    // TODO: Maybe split this into a physics update and a rendering update in the future?
     fn frame(&mut self) {
         clear_background(BLACK);
 
@@ -46,9 +52,11 @@ impl State {
 
         self.draw_ui();
 
+        // All physics and drawing happens here.
         for body in self.bodies.iter_mut() {
             // Euler integration
             body.position += body.velocity;
+            // Draw the body.
             draw_circle(body.position.x, body.position.y, 2.5, LIGHTGRAY);
         }
     }
