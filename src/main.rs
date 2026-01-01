@@ -18,7 +18,7 @@ impl State {
 
         pretty_env_logger::init();
         let mut bodies = Vec::new();
-        for i in 0..num_bodies - 1 {
+        for _ in 0..num_bodies - 1 {
             bodies.push(Body {
                 position: Vec2::new(
                     rand::gen_range(0.0, screen_width()),
