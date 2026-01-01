@@ -1,5 +1,7 @@
+use std::ops::Range;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use macroquad::prelude::camera::mouse::Camera;
 use macroquad::prelude::*;
 use macroquad::rand::srand;
 use macroquad::ui::{hash, root_ui, widgets};
@@ -12,6 +14,8 @@ struct Body {
 struct State {
     bodies: Vec<Body>,
     frame_rates: Vec<f32>,
+    camera: Camera,
+    scale_factor: f32,
 }
 
 impl State {
@@ -35,15 +39,34 @@ impl State {
             });
         }
 
+        let camera = Camera::new(vec2(0.0, 0.0), 1.0);
+
         Self {
             bodies,
             frame_rates: Vec::new(),
+            camera,
+            scale_factor: 2.0,
         }
     }
     // Called every frame
     // TODO: Maybe split this into a physics update and a rendering update in the future?
     fn frame(&mut self) {
         clear_background(BLACK);
+
+        // Update camera position and scroll
+        // Scale around center of camera, NOT ORIGIN!!
+        self.camera
+            .scale_wheel(self.camera.offset, mouse_wheel().1, self.scale_factor);
+        self.camera.update(
+            mouse_position_local(),
+            is_mouse_button_down(MouseButton::Right),
+        );
+
+        // Actually apply the camera
+        let camera_2d: Camera2D = (&self.camera).into();
+        set_camera(&camera_2d);
+
+        debug!("Camera info: {:#?}", self.camera);
 
         if self.frame_rates.len() == 5 {
             self.frame_rates = Vec::new();
@@ -62,7 +85,8 @@ impl State {
     }
     /// Draws the user interface for modifying values and seeing bodies.
     fn draw_ui(&mut self) {
-        widgets::Window::new(hash!(), vec2(20.0, 20.0), vec2(150.0, 200.0))
+        // TODO: Make the window size dynamic based on the screen size
+        widgets::Window::new(hash!(), vec2(20.0, 20.0), vec2(200.0, 200.0))
             .label("Simulation Info")
             .ui(&mut *root_ui(), |ui| {
                 ui.label(None, format!("Body Count: {}", self.bodies.len()).as_str());
@@ -74,13 +98,22 @@ impl State {
                     None,
                     format!("Framerate: {}", frame_rate_avg.round()).as_str(),
                 );
+                ui.slider(
+                    hash!(),
+                    "Scale Factor",
+                    Range {
+                        start: 1.0,
+                        end: 2.0,
+                    },
+                    &mut self.scale_factor,
+                );
             });
     }
 }
 
 #[macroquad::main("N-Body Simulation")]
 async fn main() {
-    let mut state = State::new(100);
+    let mut state = State::new(1000);
     loop {
         state.frame();
         next_frame().await
