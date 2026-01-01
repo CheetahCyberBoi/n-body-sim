@@ -1,4 +1,7 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use macroquad::prelude::*;
+use macroquad::rand::srand;
 
 struct Body {
     position: Vec2,
@@ -10,15 +13,20 @@ struct State {
 
 impl State {
     fn new(num_bodies: u32) -> Self {
+        let unix_epoch_diff = (SystemTime::now().duration_since(UNIX_EPOCH).unwrap()).as_secs();
+        srand(unix_epoch_diff);
+
+        pretty_env_logger::init();
         let mut bodies = Vec::new();
-        for _ in 0..num_bodies - 1 {
+        for i in 0..num_bodies - 1 {
             bodies.push(Body {
                 position: Vec2::new(
-                    rand::gen_range(-screen_width(), screen_width()),
-                    rand::gen_range(-screen_height(), screen_height()),
+                    rand::gen_range(0.0, screen_width()),
+                    rand::gen_range(0.0, screen_height()),
                 ),
             });
         }
+
         Self { bodies }
     }
     fn frame(&mut self) {
