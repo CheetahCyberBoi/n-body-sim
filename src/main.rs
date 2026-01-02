@@ -110,6 +110,10 @@ impl State {
                     },
                     &mut self.scale_factor,
                 );
+                ui.label(
+                    None,
+                    format!("Zoom: {}", 1.0f32 / self.camera.scale).as_str(),
+                );
             });
     }
 }
