@@ -66,8 +66,6 @@ impl State {
         let camera_2d: Camera2D = (&self.camera).into();
         set_camera(&camera_2d);
 
-        debug!("Camera info: {:#?}", self.camera);
-
         if self.frame_rates.len() == 5 {
             self.frame_rates = Vec::new();
         }
