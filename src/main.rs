@@ -35,7 +35,7 @@ impl State {
                     rand::gen_range(0.0, screen_width()),
                     rand::gen_range(0.0, screen_height()),
                 ),
-                velocity: Vec2::new(rand::gen_range(-1.0, 1.0), rand::gen_range(-1.0, 1.0)),
+                velocity: Vec2::new(rand::gen_range(-10.0, 10.0), rand::gen_range(-10.0, 10.0)),
             });
         }
 
@@ -73,10 +73,15 @@ impl State {
 
         self.draw_ui();
 
+        self.update_and_draw();
+
         // All physics and drawing happens here.
+    }
+    /// Update the positions of the bodies each frame.
+    fn update_and_draw(&mut self) {
         for body in self.bodies.iter_mut() {
-            // Euler integration
-            body.position += body.velocity;
+            // Euler integration.
+            body.position += body.velocity * get_frame_time();
             // Draw the body.
             draw_circle(body.position.x, body.position.y, 2.5, LIGHTGRAY);
         }
