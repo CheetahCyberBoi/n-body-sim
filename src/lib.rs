@@ -10,11 +10,14 @@ use crate::body::Body;
 
 mod body;
 
+pub const GRAVITY_CONSTANT: f32 = 6.6743015e+3;
+
 pub struct State {
     pub bodies: Vec<Body>,
     pub frame_rates: Vec<f32>,
     pub camera: Camera,
     pub scale_factor: f32,
+    pub render_off_mass: bool,
 }
 
 impl State {
@@ -29,13 +32,16 @@ impl State {
 
         let mut bodies = Vec::new();
         for _ in 0..num_bodies {
-            bodies.push(Body {
-                position: Vec2::new(
+            bodies.push(Body::new(
+                Vec2::new(
                     rand::gen_range(0.0, screen_width()),
                     rand::gen_range(0.0, screen_height()),
                 ),
-                velocity: Vec2::new(rand::gen_range(-10.0, 10.0), rand::gen_range(-10.0, 10.0)),
-            });
+                //Vec2::new(rand::gen_range(-10.0, 10.0), rand::gen_range(-10.0, 10.0)),
+                Vec2::new(0.0, 0.0),
+                rand::gen_range(0.0, 10.0),
+                hash!(),
+            ));
         }
 
         let camera = Camera::new(vec2(0.0, 0.0), 1.0);
@@ -45,6 +51,7 @@ impl State {
             frame_rates: Vec::new(),
             camera,
             scale_factor: 2.0,
+            render_off_mass: true,
         }
     }
     // Called every frame
@@ -72,17 +79,40 @@ impl State {
 
         self.draw_ui();
 
-        self.update_and_draw();
+        self.update_velocities();
+
+        self.draw_and_update_positions();
 
         // All physics and drawing happens here.
     }
-    /// Update the positions of the bodies each frame.
-    pub fn update_and_draw(&mut self) {
+    /// Updates the velocities of all bodies.
+    pub fn update_velocities(&mut self) {
+        // TODO: Figure out a less fucky way to do this
+        // See https://github.com/octo-kumo/space-rs/blob/master/src/world.rs
+        let pointer = self.bodies.as_mut_ptr();
+        for i in 0..self.bodies.len() {
+            for j in (i + 1)..self.bodies.len() {
+                unsafe {
+                    let body_1 = &mut *pointer.add(i);
+                    let body_2 = &mut *pointer.add(j);
+                    let gravity = body_1.calculate_force(body_2);
+                    body_1.apply_force(gravity, get_frame_time());
+                    body_2.apply_force(-gravity, get_frame_time());
+                }
+            }
+        }
+    }
+
+    /// Draws the bodies.
+    pub fn draw_and_update_positions(&mut self) {
+        // Draw the body.
         for body in self.bodies.iter_mut() {
-            // Euler integration.
             body.position += body.velocity * get_frame_time();
-            // Draw the body.
-            draw_circle(body.position.x, body.position.y, 2.5, LIGHTGRAY);
+            if self.render_off_mass {
+                draw_circle(body.position.x, body.position.y, body.mass, LIGHTGRAY);
+            } else {
+                draw_circle(body.position.x, body.position.y, 2.5, LIGHTGRAY);
+            }
         }
     }
     /// Draws the user interface for modifying values and seeing bodies.
@@ -113,6 +143,7 @@ impl State {
                     None,
                     format!("Zoom: {}", 1.0f32 / self.camera.scale).as_str(),
                 );
+                ui.checkbox(hash!(), "Render off of mass?", &mut self.render_off_mass);
             });
     }
 }
