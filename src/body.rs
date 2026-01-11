@@ -40,6 +40,10 @@ impl Body {
 
         let distance_squared = distance.length_squared();
 
+        // Clamp the distances to stay within some limit to prevent bodies from flying into the
+        // abyss.
+        let distance_squared = distance_squared.max(crate::MINIMUM_DISTANCE);
+
         // Don't know how this works, see
         // https://github.com/octo-kumo/space-rs/blob/master/src/body.rs .
         let force = (GRAVITY_CONSTANT * self.mass * other_body.mass / distance_squared) * distance

@@ -11,6 +11,7 @@ use crate::body::Body;
 mod body;
 
 pub const GRAVITY_CONSTANT: f32 = 6.6743015e+3;
+pub const MINIMUM_DISTANCE: f32 = 0.1;
 
 pub struct State {
     pub bodies: Vec<Body>,
@@ -61,8 +62,10 @@ impl State {
 
         // Update camera position and scroll
         // Scale around center of camera, NOT ORIGIN!!
+        // Note that setting the `center` to a zero vector makes it scale around the center of the
+        // screen.
         self.camera
-            .scale_wheel(self.camera.offset, mouse_wheel().1, self.scale_factor);
+            .scale_wheel(vec2(0.0, 0.0), mouse_wheel().1, self.scale_factor);
         self.camera.update(
             mouse_position_local(),
             is_mouse_button_down(MouseButton::Right),
